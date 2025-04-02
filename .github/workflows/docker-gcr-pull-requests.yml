@@ -1,0 +1,60 @@
+name: Docker Pull Requests CI/CD
+
+on:
+  pull_request:
+  workflow_dispatch: # Permite ejecutar el workflow manualmente
+
+env:
+  REGION: europe-southwest1
+  PROJECT: remor-development
+  REPO: docker-pull-requests
+  IMAGE: doctor-assistant
+
+jobs:
+  build-and-push-prs:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Chequear el código del repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract PR number
+        id: extract_pr_number
+        run: |
+          # Extract PR number from GITHUB_REF
+          PR_NUMBER=$(echo ${GITHUB_REF} | grep -o -E '[0-9]+')
+          echo "PR_NUMBER=${PR_NUMBER}"
+          echo "DOCKER_TAG=pr-${PR_NUMBER}" >> $GITHUB_ENV
+
+      # Configurar variables de entorno
+      - name: Set vars
+        run: echo "IMAGE_TAG=$REGION-docker.pkg.dev/$PROJECT/$REPO/$IMAGE:$DOCKER_TAG" >> $GITHUB_ENV
+
+      # Configurar Google Cloud Auth
+      - name: Setup Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # Configurar Google Cloud SDK
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Autenticarse con Google Container Registry
+      - name: Authenticate with Google Container Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      # Set cache for Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Construir la imagen Docker
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -118,7 +118,7 @@ Each feature is supported by robust payload validation and detailed API document
 
 #### `GCP_SA_CREDENTIALS`
 - **Purpose**: The JSON credentials for the GCP Service Account.
-- **Requirement**: Mandatory if using GCP storage.
+- **Requirement**: Optional when running on Cloud Run (uses default service account), mandatory for local development or other environments.
 
 #### `GCP_BUCKET_NAME`
 - **Purpose**: The name of the GCP storage bucket.
@@ -276,8 +276,9 @@ Enable the following APIs:
 - Add the following environment variables:
 - `API_KEY`: Your API key (e.g., `Test123`).
 - `GCP_BUCKET_NAME`: The name of your Cloud Storage bucket.
-- `GCP_SA_CREDENTIALS`: The JSON key of your service account.
-  - Paste the **entire contents** of the downloaded JSON key file into this field.
+- `GCP_SA_CREDENTIALS`: (Optional) The JSON key of your service account.
+  - When running on Cloud Run, this is optional as it will use the service account assigned to the Cloud Run service.
+  - For local development or other environments, paste the **entire contents** of the downloaded JSON key file into this field.
   - Ensure:
     - Proper JSON formatting.
     - No leading or trailing spaces.
